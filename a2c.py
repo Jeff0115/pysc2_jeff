@@ -10,6 +10,7 @@ import time
 from pysc2.lib import actions
 from pysc2.agents import base_agent
 from pre_processing import Preprocessor, is_spatial_action, stack_ndarray_dicts
+from torch.optim.lr_scheduler import ExponentialLR
 from net import CNN
 
 
@@ -114,8 +115,8 @@ class A2C():
 
     def __init__(self, envs):
         self.value_loss_coefficient = 0.5
-        self.entropy_coefficient = 0
-        self.learning_rate = 1e-4
+        self.entropy_coefficient = 1e-3
+        self.learning_rate = 1e-7
         self.envs = envs
         self.processor = Preprocessor(self.envs.observation_spec()[0])
         self.sum_score = 0
@@ -127,6 +128,7 @@ class A2C():
         self.net = CNN().cuda()
         self.optimizer = optim.Adam(
             self.net.parameters(), self.learning_rate, weight_decay=0.01)
+        self.scheduler = ExponentialLR(self.optimizer, gamma=0.99)
 
     def reset(self):
         self.obs_start = self.envs.reset()
@@ -258,7 +260,7 @@ class A2C():
                     self.sum_score += score
                     self.sum_episode += 1
                     print("episode %d: score = %f" % (self.sum_episode, score))
-                    if score>60:
+                    if score>80:
                         torch.save(self.net.state_dict(), './save/episode' +
                                    str(self.sum_episode)+'_score'+str(score)+'.pkl')
 
@@ -298,3 +300,4 @@ class A2C():
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
         self.optimizer.step()
+        self.scheduler.step()

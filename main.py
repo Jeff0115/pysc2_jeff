@@ -25,7 +25,7 @@ FLAGS(['main.py'])
 
 def main():
     map_name='CollectMineralShards'
-    envs_num=2
+    envs_num=8
     max_windows=1
     total_updates=-1
     env_args = dict(
@@ -82,11 +82,11 @@ def main():
     while True:
         agent=A2C(envs)
         agent.reset()
-        # agent.net.load_state_dict(torch.load('./save/episode40_score20.pkl'))
+        agent.net.load_state_dict(torch.load('./save/episode60_score70.pkl'))
         #try:
         while True:
             agent.train()
-            if agent.sum_episode>40 or ((agent.sum_episode%6==5) and agent.last_score<30):
+            if ((agent.sum_episode%6==5) and agent.last_score<30):
                 print("############################\n\n\n")
                 break
 
