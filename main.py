@@ -13,7 +13,7 @@ import torch
 
 
 from environment import SubprocVecEnv, make_sc2env, SingleEnv
-
+from test import test_model
 from pysc2.agents import base_agent
 from pysc2.env import sc2_env
 from absl import flags
@@ -24,7 +24,7 @@ FLAGS(['main.py'])
 
 
 def main():
-    map_name='CollectMineralShards'
+    map_name='DefeatRoaches'
     envs_num=8
     max_windows=1
     total_updates=-1
@@ -80,15 +80,28 @@ def main():
     except KeyboardInterrupt:
         pass'''
     while True:
+        test_mark=0
+        better=0
         agent=A2C(envs)
         agent.reset()
-        agent.net.load_state_dict(torch.load('./save/episode60_score70.pkl'))
+        agent.net.load_state_dict(torch.load('./save/episode311_score36.2.pkl'))
         #try:
         while True:
             agent.train()
-            if ((agent.sum_episode%6==5) and agent.last_score<30):
-                print("############################\n\n\n")
-                break
+            if agent.sum_episode%80<71:
+                test_mark=0
+            if agent.sum_episode%80>=71 and not test_mark:
+                test_mark=1
+                mean_score, _ = test_model(agent)
+                if mean_score > 36 + better:
+                    better+=1
+                    if better>70:
+                        better=70
+                    torch.save(agent.net.state_dict(), './save/episode' +
+                                str(agent.sum_episode)+'_score'+str(mean_score)+'.pkl')
+                if mean_score<20+0.005*agent.sum_episode:
+                    print("############################\n\n\n")
+                    break
 
     #except :
         #print(agent.last_obs['available_actions'])

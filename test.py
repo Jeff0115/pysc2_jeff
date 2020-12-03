@@ -23,8 +23,7 @@ FLAGS(['main.py'])
 
 
 
-def main():
-    model='./save/episode40_score24.pkl'
+def test_model(agent):
     map_name='MoveToBeacon'
     envs_num=1
     max_windows=1
@@ -56,42 +55,34 @@ def main():
     envs = SubprocVecEnv(env_fns)
     # 一个随机的实现方式 用来debug
     processor=pro(envs.observation_spec()[0])
-    while True:
-        agent=A2C(envs)
-        agent.reset()
-        agent.net.load_state_dict(torch.load(model))
-        #try:
+    #try:
 
-        t=0
-        max_score=0
-        episode=100
-        while True:
-            policy, value = agent.step(agent.last_obs)
-            actions = agent.select_actions(policy, agent.last_obs)
-            actions = agent.mask_unused_action(actions)
-            size = agent.last_obs['screen'].shape[2:4]
-            pysc2_action = agent.functioncall_action(actions, size)
-            obs_raw = agent.envs.step(pysc2_action)
-            agent.last_obs = agent.processor.preprocess_obs(obs_raw)
-            for i in obs_raw:
-                if i.last():
-                    t+=1
-                    score = i.observation['score_cumulative'][0]
-                    agent.sum_score += score
-                    agent.sum_episode += 1
-                    print("episode %d: score = %f" % (agent.sum_episode, score))
-                    if score>max_score:
-                        max_score=score
-            if t>episode:
-                print('max score=%d,average score=%d\n\n\n' % (max_score,agent.sum_score/(agent.sum_episode)))
-                break
+    t=0
+    max_score=0
+    mean_score=0
+    episode=10
+    while True:
+        policy, value = agent.step(agent.last_obs)
+        actions = agent.select_actions(policy, agent.last_obs)
+        actions = agent.mask_unused_action(actions)
+        size = agent.last_obs['screen'].shape[2:4]
+        pysc2_action = agent.functioncall_action(actions, size)
+        obs_raw = agent.envs.step(pysc2_action)
+        agent.last_obs = agent.processor.preprocess_obs(obs_raw)
+        for i in obs_raw:
+            if i.last():
+                t+=1
+                score = i.observation['score_cumulative'][0]
+                mean_score+=score
+                print("episode %d: score = %f" % (t, score))
+                if score>max_score:
+                    max_score=score
+        if t>=episode:
+            mean_score/=episode
+            print('max score=%d,average score=%d\n\n\n' % (max_score,mean_score))
+            break
 
     #except :
         #print(agent.last_obs['available_actions'])
-
     envs.close()
-
-
-
-if __name__=='__main__':
-    main()
+    return mean_score, max_score

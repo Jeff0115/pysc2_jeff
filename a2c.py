@@ -10,7 +10,6 @@ import time
 from pysc2.lib import actions
 from pysc2.agents import base_agent
 from pre_processing import Preprocessor, is_spatial_action, stack_ndarray_dicts
-from torch.optim.lr_scheduler import ExponentialLR
 from net import CNN
 
 
@@ -115,8 +114,8 @@ class A2C():
 
     def __init__(self, envs):
         self.value_loss_coefficient = 0.5
-        self.entropy_coefficient = 1e-3
-        self.learning_rate = 1e-7
+        self.entropy_coefficient = 0.05
+        self.learning_rate = 1e-5
         self.envs = envs
         self.processor = Preprocessor(self.envs.observation_spec()[0])
         self.sum_score = 0
@@ -128,7 +127,6 @@ class A2C():
         self.net = CNN().cuda()
         self.optimizer = optim.Adam(
             self.net.parameters(), self.learning_rate, weight_decay=0.01)
-        self.scheduler = ExponentialLR(self.optimizer, gamma=0.99)
 
     def reset(self):
         self.obs_start = self.envs.reset()
@@ -165,10 +163,10 @@ class A2C():
             return 0
         args_sample = dict()
         for type, pi in args_pi.items():
-            # if type.name == 'queued':
-            #     args_sample[type] = torch.IntTensor([0, 0])
-            # else:
-            args_sample[type] = sample(pi).cpu()
+            if type.name == 'queued':
+                args_sample[type] = torch.zeros([8],dtype=torch.int)
+            else:
+                args_sample[type] = sample(pi).cpu()
         return function_sample, args_sample
 
     def mask_unused_action(self, actions):
@@ -245,12 +243,17 @@ class A2C():
             else: print('2.False'),printoobs_info(obs_raw[1])
             print(last_obs['available_actions'][0][fn_id[0]], last_obs['available_actions'][1][fn_id[1]],fn_id)'''
             obs_raw = self.envs.step(pysc2_action)
-            # print("0:",pysc2_action[0].function)
-            # print("1:",pysc2_action[1].function)
+            # print("0:", pysc2_action[0].function)
+            # print("1:", pysc2_action[1].function)
 
             last_obs = self.processor.preprocess_obs(obs_raw)
-            sample_rewards[step, :] = [
-                1 if i.reward else -0.1 for i in obs_raw]
+            def get_reward(i):
+                if i.reward > 0:
+                    return i.reward
+                if not i.reward:
+                    return -0.5
+                return -1
+            sample_rewards[step, :] = [get_reward(i) for i in obs_raw]
             sample_dones[step, :] = [i.last() for i in obs_raw]
 
             for i in obs_raw:
@@ -260,9 +263,9 @@ class A2C():
                     self.sum_score += score
                     self.sum_episode += 1
                     print("episode %d: score = %f" % (self.sum_episode, score))
-                    if score>80:
-                        torch.save(self.net.state_dict(), './save/episode' +
-                                   str(self.sum_episode)+'_score'+str(score)+'.pkl')
+                    # if score > 60:
+                    #     torch.save(self.net.state_dict(), './save/episode' +
+                    #                str(self.sum_episode)+'_score'+str(score)+'.pkl')
 
         self.last_obs = last_obs
         next_value = self.get_value(last_obs).cpu()
@@ -300,4 +303,3 @@ class A2C():
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
         self.optimizer.step()
-        self.scheduler.step()

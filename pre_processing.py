@@ -73,7 +73,11 @@ class Preprocessor():
     """
     available_actions = np.zeros(NUM_FUNCTIONS, dtype=np.float32)
     # print(obs['available_actions'])
-    unmask = np.intersect1d(obs['available_actions'],np.array([7,331]))
+    unmask = np.intersect1d(obs['available_actions'],np.array([7,12]))
+    if 12 in unmask.tolist():
+      unmask = np.array([12])
+    if not len(unmask):
+      unmask=np.array([0])
     available_actions[unmask] = 1
     #available_actions[1] = 0
     #print(available_actions)
