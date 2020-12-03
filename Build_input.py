@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import torch
 from pysc2.lib import actions
 from pysc2.lib import features
 
@@ -17,10 +18,10 @@ def preprocess_minimap(minimap):
     assert minimap.shape[0] == len(features.MINIMAP_FEATURES)
     for i in range(len(features.MINIMAP_FEATURES)):
         if i == _MINIMAP_PLAYER_ID:
-            layers.append(minimap[i:i + 1] / features.MINIMAP_FEATURES[i].scale)
+            layers.append(torch.log(torch.from_numpy(1.+minimap[i:i + 1])))
 
         elif features.MINIMAP_FEATURES[i].type == features.FeatureType.SCALAR:
-            layers.append(minimap[i:i + 1] / features.MINIMAP_FEATURES[i].scale)
+            layers.append(torch.log(torch.from_numpy(1.+minimap[i:i + 1])))
 
         else:
             layer = np.zeros([features.MINIMAP_FEATURES[i].scale, minimap.shape[1], minimap.shape[2]], dtype=np.float32)
@@ -38,10 +39,10 @@ def preprocess_screen(screen):
     assert screen.shape[0] == len(features.SCREEN_FEATURES)
     for i in range(len(features.SCREEN_FEATURES)):
         if i == _SCREEN_PLAYER_ID or i == _SCREEN_UNIT_TYPE:
-            layers.append(screen[i:i + 1] / features.SCREEN_FEATURES[i].scale)
+            layers.append(torch.log(torch.from_numpy(1.+screen[i:i + 1])))
 
         elif features.SCREEN_FEATURES[i].type == features.FeatureType.SCALAR:
-            layers.append(screen[i:i + 1] / features.SCREEN_FEATURES[i].scale)
+            layers.append(torch.log(torch.from_numpy(1.+screen[i:i + 1])))
 
         else:
             layer = np.zeros([features.SCREEN_FEATURES[i].scale, screen.shape[1], screen.shape[2]], dtype=np.float32)
@@ -53,25 +54,25 @@ def preprocess_screen(screen):
     return np.concatenate(layers, axis=0)
 
 
-def minimap_channel():
-    c = 0
-    for i in range(len(features.MINIMAP_FEATURES)):
-        if i == _MINIMAP_PLAYER_ID:
-            c += 1
-        elif features.MINIMAP_FEATURES[i].type == features.FeatureType.SCALAR:
-            c += 1
-        else:
-            c += features.MINIMAP_FEATURES[i].scale
-    return c
+# def minimap_channel():
+#     c = 0
+#     for i in range(len(features.MINIMAP_FEATURES)):
+#         if i == _MINIMAP_PLAYER_ID:
+#             c += 1
+#         elif features.MINIMAP_FEATURES[i].type == features.FeatureType.SCALAR:
+#             c += 1
+#         else:
+#             c += features.MINIMAP_FEATURES[i].scale
+#     return c
 
 
-def screen_channel():
-    c = 0
-    for i in range(len(features.SCREEN_FEATURES)):
-        if i == _SCREEN_PLAYER_ID or i == _SCREEN_UNIT_TYPE:
-            c += 1
-        elif features.SCREEN_FEATURES[i].type == features.FeatureType.SCALAR:
-            c += 1
-        else:
-            c += features.SCREEN_FEATURES[i].scale
-    return c
+# def screen_channel():
+#     c = 0
+#     for i in range(len(features.SCREEN_FEATURES)):
+#         if i == _SCREEN_PLAYER_ID or i == _SCREEN_UNIT_TYPE:
+#             c += 1
+#         elif features.SCREEN_FEATURES[i].type == features.FeatureType.SCALAR:
+#             c += 1
+#         else:
+#             c += features.SCREEN_FEATURES[i].scale
+#     return c

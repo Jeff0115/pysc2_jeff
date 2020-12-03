@@ -103,10 +103,10 @@ class PPO():
 
     def __init__(self, envs):
         self.value_loss_coefficient = 0.5
-        self.entropy_coefficient = 0
+        self.entropy_coefficient = 0.05
         self.learning_rate = 1e-4
         self.envs = envs
-        self.env_num=2
+        self.env_num=8
         self.processor = Preprocessor(self.envs.observation_spec()[0])
         self.sum_score = 0
         self.n_steps = 512
@@ -163,9 +163,9 @@ class PPO():
             return 0
         args_sample = dict()
         for type, pi in args_pi.items():
-            #if type.name == 'queued':
-                #args_sample[type] = torch.zeros((self.env_num,),dtype=int)
-            #else:
+            if type.name == 'queued':
+                args_sample[type] = torch.zeros((self.env_num,),dtype=int)
+            else:
                 args_sample[type] = sample(pi).cpu()
         return function_sample, args_sample
 
@@ -248,7 +248,7 @@ class PPO():
 
             last_obs = self.processor.preprocess_obs(obs_raw)
             sample_rewards[step, :] = [
-                1 if i.reward else -0.1 for i in obs_raw]
+                i.reward for i in obs_raw]
             sample_dones[step, :] = [i.last() for i in obs_raw]
 
             for i in obs_raw:
@@ -257,9 +257,9 @@ class PPO():
                     self.sum_score += score
                     self.sum_episode += 1
                     print("episode %d: score = %f" % (self.sum_episode, score))
-                    if self.sum_episode % 10 == 0:
-                        torch.save(self.net.state_dict(), './save/episode' +
-                                   str(self.sum_episode)+'_score'+str(score)+'.pkl')
+                    # if self.sum_episode % 10 == 0:
+                    #     torch.save(self.net.state_dict(), './save/episode' +
+                    #                str(self.sum_episode)+'_score'+str(score)+'.pkl')
 
         self.last_obs = last_obs
         next_value = self.get_value(last_obs).cpu()

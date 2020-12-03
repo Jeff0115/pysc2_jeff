@@ -115,13 +115,13 @@ class A2C():
     def __init__(self, envs):
         self.value_loss_coefficient = 0.5
         self.entropy_coefficient = 0.05
-        self.learning_rate = 1e-5
+        self.learning_rate = 1e-4
         self.envs = envs
         self.processor = Preprocessor(self.envs.observation_spec()[0])
         self.sum_score = 0
         self.last_score = 0
         self.n_steps = 8
-        self.gamma = 0.999
+        self.gamma = 0.99
         self.sum_episode = 0
         self.total_updates = -1
         self.net = CNN().cuda()

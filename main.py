@@ -14,6 +14,7 @@ import torch
 
 from environment import SubprocVecEnv, make_sc2env, SingleEnv
 from test import test_model
+from ppo import PPO
 from pysc2.agents import base_agent
 from pysc2.env import sc2_env
 from absl import flags
@@ -82,15 +83,16 @@ def main():
     while True:
         test_mark=0
         better=0
-        agent=A2C(envs)
+        agent=PPO(envs)
         agent.reset()
-        agent.net.load_state_dict(torch.load('./save/episode311_score36.2.pkl'))
+        # agent.net.load_state_dict(torch.load('./save/episode311_score36.2.pkl'))
         #try:
         while True:
             agent.train()
-            if agent.sum_episode%80<71:
+            if agent.sum_episode%120<60:
                 test_mark=0
-            if agent.sum_episode%80>=71 and not test_mark:
+            if agent.sum_episode%120>=60 and not test_mark:
+                # print("###### I'm in!")
                 test_mark=1
                 mean_score, _ = test_model(agent)
                 if mean_score > 36 + better:
@@ -99,7 +101,7 @@ def main():
                         better=70
                     torch.save(agent.net.state_dict(), './save/episode' +
                                 str(agent.sum_episode)+'_score'+str(mean_score)+'.pkl')
-                if mean_score<20+0.005*agent.sum_episode:
+                if mean_score<20+0.01*agent.sum_episode:
                     print("############################\n\n\n")
                     break
 

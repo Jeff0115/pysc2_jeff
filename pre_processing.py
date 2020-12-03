@@ -1,9 +1,9 @@
 from collections import namedtuple
 
 import numpy as np
-
 from pysc2.lib import actions
 from pysc2.lib import features
+# from Build_input import preprocess_minimap, preprocess_screen
 
 
 FlatFeature = namedtuple('FlatFeatures', ['index', 'type', 'scale', 'name'])
@@ -68,6 +68,7 @@ class Preprocessor():
     except:
         print(obs_list)
         exit(0)
+
   def _preprocess_obs(self, obs):
     """Compute screen, minimap and flat network inputs from raw observations.
     """
@@ -82,11 +83,13 @@ class Preprocessor():
     #available_actions[1] = 0
     #print(available_actions)
     screen = obs['feature_screen']
+    # screen = preprocess_screen(screen)
     # unmasked_list = [4,5,6,8,9,14,15]
     # for i in range(27):
     #   if i not in unmasked_list:
     #     screen[i,:,:]=np.zeros((32,32))
     minimap = obs['feature_minimap']
+    # minimap = preprocess_minimap(minimap)
 
     flat = np.concatenate([
         obs['player']])

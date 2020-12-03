@@ -78,7 +78,7 @@ def test_model(agent):
                 if score>max_score:
                     max_score=score
         if t>=episode:
-            mean_score/=episode
+            mean_score/=t
             print('max score=%d,average score=%d\n\n\n' % (max_score,mean_score))
             break
 
