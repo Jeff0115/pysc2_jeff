@@ -23,6 +23,7 @@ def _xy_locs(mask):
   """Mask should be a set of bools from comparison with a feature layer."""
   y, x = mask.nonzero()
   return list(zip(x, y))
+
 class CollectMineralShards(base_agent.BaseAgent):
   """An agent specifically for solving the CollectMineralShards map."""
 
@@ -42,3 +43,23 @@ class CollectMineralShards(base_agent.BaseAgent):
       return 331,[[0],[x,y]]
     else:
       return 7,[[0]]
+
+class DefeatRoaches(base_agent.BaseAgent):
+  """An agent specifically for solving the DefeatRoaches map."""
+
+  def step(self, obs):
+    super(DefeatRoaches, self).step(obs)
+    if FUNCTIONS.Attack_screen.id in obs.observation.available_actions:
+      player_relative = obs.observation.feature_screen.player_relative
+      roaches = _xy_locs(player_relative == _PLAYER_ENEMY)
+      if not roaches:
+        return 0, []
+
+      # Find the roach with max y coord.
+      target = roaches[numpy.argmax(numpy.array(roaches)[:, 1])]
+      return 12, [[0], [target[0], target[1]]]
+
+    if FUNCTIONS.select_army.id in obs.observation.available_actions:
+      return 7, [[0]]
+
+    return 0, []
